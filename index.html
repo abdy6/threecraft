@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ThreeCraft - Minecraft Clone</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    #crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 20px;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    #crosshair::before,
+    #crosshair::after {
+      content: '';
+      position: absolute;
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    #crosshair::before {
+      width: 2px;
+      height: 10px;
+      top: 5px;
+      left: 9px;
+    }
+
+    #crosshair::after {
+      width: 10px;
+      height: 2px;
+      top: 9px;
+      left: 5px;
+    }
+
+    #instructions {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: white;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 15px;
+      border-radius: 5px;
+      font-size: 14px;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    #hud {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      color: white;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px 15px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      z-index: 100;
+      pointer-events: none;
+      line-height: 1.6;
+    }
+
+    #hud div {
+      margin: 2px 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="crosshair"></div>
+    <div id="instructions">
+      <div>WASD - Move | Space - Jump | Mouse - Look Around</div>
+      <div>Left Click - Break Block | Right Click - Place Block</div>
+    </div>
+    <div id="hud">
+      <div id="hud-world-pos">World: (0, 0, 0)</div>
+      <div id="hud-chunk-pos">Chunk: (0, 0) Local: (0, 0)</div>
+      <div id="hud-fps">FPS: 0</div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
+
