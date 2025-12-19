@@ -19,10 +19,14 @@ export class World {
       for (let chunkX = 0; chunkX < WIDTH; chunkX++) {
         const chunk = new Chunk(chunkX, chunkZ);
         
-        // Fill bottom layer with grass blocks (flat world)
+        // Fill levels 0-19 with dirt blocks
         for (let z = 0; z < CHUNK_DEPTH; z++) {
           for (let x = 0; x < CHUNK_WIDTH; x++) {
-            chunk.setBlock(x, 0, z, new Block('GRASS'));
+            for (let y = 0; y < 20; y++) {
+              chunk.setBlock(x, y, z, new Block('DIRT'));
+            }
+            // Fill level 20 with grass blocks
+            chunk.setBlock(x, 20, z, new Block('GRASS'));
           }
         }
 

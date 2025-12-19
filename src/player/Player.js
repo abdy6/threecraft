@@ -4,7 +4,7 @@ import { CONFIG } from '../config.js';
 export class Player {
   constructor(world) {
     this.world = world;
-    this.position = new THREE.Vector3(8, 5, 8); // Start above ground
+    this.position = new THREE.Vector3(8, 22, 8); // Start above ground (grass is at y=20)
     this.velocity = new THREE.Vector3(0, 0, 0);
     this.onGround = false;
 
