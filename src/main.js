@@ -63,7 +63,10 @@ function animate() {
     controls.update(deltaTime);
 
     // Update highlight box (raycast for block selection)
-    if (controls.isLocked) {
+    // Show highlight when pointer is locked (desktop) or touch controls are enabled (mobile)
+    const shouldShowHighlight = controls.isLocked || 
+      (controls.touchControls && controls.touchControls.isEnabled());
+    if (shouldShowHighlight) {
       const eyePos = player.getEyePosition();
       const direction = player.getForwardDirection();
       const raycastResult = raycast(world, eyePos, direction);
@@ -86,9 +89,11 @@ function updateHUD() {
   // World position
   hudWorldPos.textContent = `World: (${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)})`;
   
-  // Chunk position
-  const { chunkX, chunkZ, localX, localZ } = world.worldToLocal(pos.x, pos.y, pos.z);
-  hudChunkPos.textContent = `Chunk: (${chunkX}, ${chunkZ}) Local: (${Math.floor(localX)}, ${Math.floor(localZ)})`;
+  // Chunk position (only show on non-touch devices)
+  if (!document.body.classList.contains('touch-device')) {
+    const { chunkX, chunkZ, localX, localZ } = world.worldToLocal(pos.x, pos.y, pos.z);
+    hudChunkPos.textContent = `Chunk: (${chunkX}, ${chunkZ}) Local: (${Math.floor(localX)}, ${Math.floor(localZ)})`;
+  }
   
   // FPS
   hudFPS.textContent = `FPS: ${currentFPS}`;

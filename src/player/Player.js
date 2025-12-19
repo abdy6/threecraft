@@ -10,7 +10,7 @@ export class Player {
 
     // Create camera
     this.camera = new THREE.PerspectiveCamera(
-      75,
+      CONFIG.CAMERA_FOV,
       window.innerWidth / window.innerHeight,
       0.1,
       1000

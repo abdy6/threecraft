@@ -1,10 +1,14 @@
 import { CONFIG } from '../config.js';
+import { TouchControls } from './TouchControls.js';
 
 export class Controls {
   constructor(player, renderer, world) {
     this.player = player;
     this.renderer = renderer;
     this.world = world;
+    
+    // Initialize touch controls
+    this.touchControls = new TouchControls();
 
     // Movement state
     this.keys = {
@@ -25,7 +29,8 @@ export class Controls {
     this.mouseY = 0;
     this.yaw = 0; // Horizontal rotation
     this.pitch = 0; // Vertical rotation
-    this.sensitivity = 0.002;
+    this.mouseSensitivity = CONFIG.MOUSE_SENSITIVITY;
+    this.touchSensitivity = CONFIG.TOUCH_SENSITIVITY;
 
     // Pointer lock
     this.isLocked = false;
@@ -170,8 +175,8 @@ export class Controls {
 
     // Only update if there's actual movement
     if (movementX !== 0 || movementY !== 0) {
-      this.yaw -= movementX * this.sensitivity;
-      this.pitch -= movementY * this.sensitivity;
+      this.yaw -= movementX * this.mouseSensitivity;
+      this.pitch -= movementY * this.mouseSensitivity;
 
       // Clamp pitch to prevent flipping
       this.pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.pitch));
@@ -216,6 +221,9 @@ export class Controls {
           if (result.hit) {
             this.world.setBlock(result.blockX, result.blockY, result.blockZ, null);
             this.renderer.updateChunkMeshes();
+            // Update highlight immediately after breaking
+            const newRaycast = raycast(this.world, eyePos, direction);
+            this.renderer.updateHighlight(newRaycast);
           }
         } else if (event.button === 2) {
           // Right click - place block
@@ -237,6 +245,13 @@ export class Controls {
                 // Use the selected block type instead of hardcoded 'GRASS'
                 this.world.setBlock(placePos.x, placePos.y, placePos.z, new Block(this.selectedBlockType));
                 this.renderer.updateChunkMeshes();
+                // Update highlight immediately after placing
+                const newRaycast = raycast(this.world, eyePos, direction);
+                this.renderer.updateHighlight(newRaycast);
+              } else {
+                // Even if we didn't place, update highlight to reflect current state
+                const newRaycast = raycast(this.world, eyePos, direction);
+                this.renderer.updateHighlight(newRaycast);
               }
             }
           }
@@ -252,9 +267,20 @@ export class Controls {
     if (this.isLocked) {
       this.framesSinceLock++;
     }
+    
+    // Handle touch camera rotation
+    if (this.touchControls.isEnabled() && this.touchControls.cameraRotationActive) {
+      const touchRotation = this.touchControls.getTouchRotation();
+      if (touchRotation.deltaX !== 0 || touchRotation.deltaY !== 0) {
+        this.yaw -= touchRotation.deltaX * this.touchSensitivity;
+        this.pitch -= touchRotation.deltaY * this.touchSensitivity;
+        // Clamp pitch to prevent flipping
+        this.pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.pitch));
+      }
+    }
 
-    // Always update camera rotation if locked
-    if (this.isLocked) {
+    // Always update camera rotation if locked (mouse) or touch is active
+    if (this.isLocked || (this.touchControls.isEnabled() && this.touchControls.cameraRotationActive)) {
       this.player.camera.rotation.order = 'YXZ';
       this.player.camera.rotation.y = this.yaw;
       this.player.camera.rotation.x = this.pitch;
@@ -266,23 +292,42 @@ export class Controls {
       z: 0,
       y: 0  // Vertical movement for fly mode
     };
+    
+    // Check if touch controls are active
+    const touchActive = this.touchControls.isEnabled() && this.touchControls.joystickActive;
+    const useTouchMovement = touchActive;
 
-    if (this.isLocked) {
-      if (this.keys.forward) {
-        moveDirection.x -= Math.sin(this.yaw);
-        moveDirection.z -= Math.cos(this.yaw);
-      }
-      if (this.keys.backward) {
-        moveDirection.x += Math.sin(this.yaw);
-        moveDirection.z += Math.cos(this.yaw);
-      }
-      if (this.keys.left) {
-        moveDirection.x -= Math.cos(this.yaw);
-        moveDirection.z += Math.sin(this.yaw);
-      }
-      if (this.keys.right) {
-        moveDirection.x += Math.cos(this.yaw);
-        moveDirection.z -= Math.sin(this.yaw);
+    if (this.isLocked || useTouchMovement) {
+      if (useTouchMovement) {
+        // Use touch joystick movement
+        const touchMovement = this.touchControls.getTouchMovement();
+        // touchMovement.x is left/right (positive = right)
+        // touchMovement.z is forward/back (positive = forward, but joystick y is up which should be forward)
+        // Convert joystick direction to world space based on camera yaw
+        // Forward/backward component (z in touchMovement, which is y in joystick)
+        moveDirection.x -= Math.sin(this.yaw) * touchMovement.z;
+        moveDirection.z -= Math.cos(this.yaw) * touchMovement.z;
+        // Left/right component (x in touchMovement)
+        moveDirection.x += Math.cos(this.yaw) * touchMovement.x;
+        moveDirection.z -= Math.sin(this.yaw) * touchMovement.x;
+      } else {
+        // Use keyboard movement
+        if (this.keys.forward) {
+          moveDirection.x -= Math.sin(this.yaw);
+          moveDirection.z -= Math.cos(this.yaw);
+        }
+        if (this.keys.backward) {
+          moveDirection.x += Math.sin(this.yaw);
+          moveDirection.z += Math.cos(this.yaw);
+        }
+        if (this.keys.left) {
+          moveDirection.x -= Math.cos(this.yaw);
+          moveDirection.z += Math.sin(this.yaw);
+        }
+        if (this.keys.right) {
+          moveDirection.x += Math.cos(this.yaw);
+          moveDirection.z -= Math.sin(this.yaw);
+        }
       }
 
       // Normalize horizontal movement direction
@@ -301,11 +346,26 @@ export class Controls {
           moveDirection.y = -1;
         }
       }
-
-      // Handle jump (only when not in fly mode)
-      if (!this.flyMode && this.keys.jump) {
+    }
+    
+    // Handle jump (only when not in fly mode) - works independently of movement
+    if (!this.flyMode) {
+      if (this.keys.jump || (this.touchControls.isEnabled() && this.touchControls.isTouchJumpPressed())) {
         this.player.jump();
         this.keys.jump = false; // Prevent continuous jumping
+      }
+    }
+    
+    // Handle touch button actions (one-time actions)
+    if (this.touchControls.isEnabled()) {
+      if (this.touchControls.wasPlacePressedThisFrame()) {
+        this.handlePlaceBlock();
+      }
+      if (this.touchControls.wasBreakPressedThisFrame()) {
+        this.handleBreakBlock();
+      }
+      if (this.touchControls.wasCyclePressedThisFrame()) {
+        this.handleCycleBlock();
       }
     }
 
@@ -320,6 +380,81 @@ export class Controls {
   // Get currently selected block type
   getSelectedBlockType() {
     return this.selectedBlockType;
+  }
+  
+  // Handle block placement (called from touch controls)
+  handlePlaceBlock() {
+    // Import raycast here to avoid circular dependencies
+    import('../utils/Raycast.js').then(({ raycast, getPlacePosition }) => {
+      import('../world/Block.js').then(({ Block }) => {
+        const eyePos = this.player.getEyePosition();
+        const direction = this.player.getForwardDirection();
+
+        const result = raycast(this.world, eyePos, direction);
+
+        if (result.hit) {
+          const placePos = getPlacePosition(result);
+          if (placePos) {
+            // Check if position is not inside player
+            const playerPos = this.player.position;
+            const halfWidth = this.player.width / 2;
+            const minY = playerPos.y;
+            const maxY = playerPos.y + this.player.height;
+
+            const inPlayerBounds = 
+              placePos.x >= playerPos.x - halfWidth && placePos.x <= playerPos.x + halfWidth &&
+              placePos.y >= minY && placePos.y <= maxY &&
+              placePos.z >= playerPos.z - halfWidth && placePos.z <= playerPos.z + halfWidth;
+
+            if (!inPlayerBounds && !this.world.isSolid(placePos.x, placePos.y, placePos.z)) {
+              this.world.setBlock(placePos.x, placePos.y, placePos.z, new Block(this.selectedBlockType));
+              this.renderer.updateChunkMeshes();
+              // Update highlight immediately after placing
+              const newRaycast = raycast(this.world, eyePos, direction);
+              this.renderer.updateHighlight(newRaycast);
+            } else {
+              // Even if we didn't place, update highlight to reflect current state
+              const newRaycast = raycast(this.world, eyePos, direction);
+              this.renderer.updateHighlight(newRaycast);
+            }
+          }
+        }
+      });
+    });
+  }
+  
+  // Handle block breaking (called from touch controls)
+  handleBreakBlock() {
+    // Import raycast here to avoid circular dependencies
+    import('../utils/Raycast.js').then(({ raycast }) => {
+      const eyePos = this.player.getEyePosition();
+      const direction = this.player.getForwardDirection();
+
+      const result = raycast(this.world, eyePos, direction);
+
+      if (result.hit) {
+        this.world.setBlock(result.blockX, result.blockY, result.blockZ, null);
+        this.renderer.updateChunkMeshes();
+        // Update highlight immediately after breaking
+        const newRaycast = raycast(this.world, eyePos, direction);
+        this.renderer.updateHighlight(newRaycast);
+      } else {
+        // Even if we didn't break, update highlight to reflect current state
+        const newRaycast = raycast(this.world, eyePos, direction);
+        this.renderer.updateHighlight(newRaycast);
+      }
+    });
+  }
+  
+  // Handle block cycling (called from touch controls)
+  handleCycleBlock() {
+    this.selectedBlockIndex = (this.selectedBlockIndex + 1) % this.placeableBlocks.length;
+    this.selectedBlockType = this.placeableBlocks[this.selectedBlockIndex];
+    
+    // Notify renderer to update HUD (if needed)
+    if (this.renderer.updateSelectedBlock) {
+      this.renderer.updateSelectedBlock(this.selectedBlockType);
+    }
   }
 }
 
