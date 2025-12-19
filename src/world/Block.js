@@ -25,6 +25,10 @@ export class Block {
     STONE: {
       solid: true,
       color: 0x808080
+    },
+    DIRT: {
+      solid: true,
+      color: 0x422b1f
     }
   };
 

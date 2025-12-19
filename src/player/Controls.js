@@ -28,6 +28,11 @@ export class Controls {
     // Track frames since lock to ignore initial large movements
     this.framesSinceLock = 0;
 
+    // Block selection
+    this.placeableBlocks = CONFIG.PLACEABLE_BLOCKS;
+    this.selectedBlockIndex = 0;
+    this.selectedBlockType = this.placeableBlocks[this.selectedBlockIndex] || 'GRASS';
+
     // Bind the handler so we can remove it later (must be before setupEventListeners)
     this.mouseMoveHandler = (e) => this.onMouseMove(e);
 
@@ -41,6 +46,7 @@ export class Controls {
 
     // Mouse events
     document.addEventListener('mousedown', (e) => this.onMouseDown(e));
+    document.addEventListener('wheel', (e) => this.onWheel(e), { passive: false });
     
     // Prevent right-click context menu
     document.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -146,6 +152,28 @@ export class Controls {
     }
   }
 
+  onWheel(event) {
+    if (!this.isLocked) return;
+    
+    event.preventDefault();
+    
+    // Scroll up = next block, scroll down = previous block
+    if (event.deltaY > 0) {
+      // Scroll down - previous block
+      this.selectedBlockIndex = (this.selectedBlockIndex - 1 + this.placeableBlocks.length) % this.placeableBlocks.length;
+    } else {
+      // Scroll up - next block
+      this.selectedBlockIndex = (this.selectedBlockIndex + 1) % this.placeableBlocks.length;
+    }
+    
+    this.selectedBlockType = this.placeableBlocks[this.selectedBlockIndex];
+    
+    // Notify renderer to update HUD (if needed)
+    if (this.renderer.updateSelectedBlock) {
+      this.renderer.updateSelectedBlock(this.selectedBlockType);
+    }
+  }
+
   onMouseDown(event) {
     if (!this.isLocked) return;
 
@@ -180,7 +208,8 @@ export class Controls {
                 placePos.z >= playerPos.z - halfWidth && placePos.z <= playerPos.z + halfWidth;
 
               if (!inPlayerBounds && !this.world.isSolid(placePos.x, placePos.y, placePos.z)) {
-                this.world.setBlock(placePos.x, placePos.y, placePos.z, new Block('GRASS'));
+                // Use the selected block type instead of hardcoded 'GRASS'
+                this.world.setBlock(placePos.x, placePos.y, placePos.z, new Block(this.selectedBlockType));
                 this.renderer.updateChunkMeshes();
               }
             }
@@ -245,6 +274,11 @@ export class Controls {
 
     // Always apply physics (gravity, collision) even when not locked
     this.player.move(deltaTime, moveDirection);
+  }
+
+  // Get currently selected block type
+  getSelectedBlockType() {
+    return this.selectedBlockType;
   }
 }
 

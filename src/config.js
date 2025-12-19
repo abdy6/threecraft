@@ -28,6 +28,9 @@ export const CONFIG = {
   RENDER_DISTANCE: 8,  // chunks (for future infinite world)
   
   // Controls
-  TOGGLE_WIREFRAME_KEY: 'KeyG'  // Key to toggle wireframe grid (default: G)
+  TOGGLE_WIREFRAME_KEY: 'KeyG',  // Key to toggle wireframe grid (default: G)
+  
+  // Placeable blocks (blocks the player can place)
+  PLACEABLE_BLOCKS: ['GRASS', 'STONE', 'DIRT']  // Add more block types here as you create them
 };
 

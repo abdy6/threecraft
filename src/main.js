@@ -26,6 +26,7 @@ let currentFPS = 0;
 const hudWorldPos = document.getElementById('hud-world-pos');
 const hudChunkPos = document.getElementById('hud-chunk-pos');
 const hudFPS = document.getElementById('hud-fps');
+const hudSelectedBlock = document.getElementById('hud-selected-block');
 
 // Handle tab visibility changes
 document.addEventListener('visibilitychange', () => {
@@ -91,6 +92,9 @@ function updateHUD() {
   
   // FPS
   hudFPS.textContent = `FPS: ${currentFPS}`;
+  
+  // Selected block
+  hudSelectedBlock.textContent = `Block: ${controls.getSelectedBlockType()}`;
 }
 
 // Handle window resize
