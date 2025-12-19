@@ -12,8 +12,13 @@ export class Controls {
       backward: false,
       left: false,
       right: false,
-      jump: false
+      jump: false,
+      up: false,    // E key - fly up
+      down: false   // Q key - fly down
     };
+
+    // Fly mode state
+    this.flyMode = false;
 
     // Mouse state
     this.mouseX = 0;
@@ -93,10 +98,25 @@ export class Controls {
         this.keys.jump = true;
         event.preventDefault();
         break;
+      case 'KeyE':
+        this.keys.up = true;
+        break;
+      case 'KeyQ':
+        this.keys.down = true;
+        break;
       default:
         // Check for wireframe toggle key
         if (event.code === CONFIG.TOGGLE_WIREFRAME_KEY) {
           this.renderer.toggleWireframe();
+          event.preventDefault();
+        }
+        // Check for fly mode toggle key
+        else if (event.code === CONFIG.TOGGLE_FLY_KEY) {
+          this.flyMode = !this.flyMode;
+          // Reset velocity when toggling fly mode to prevent unwanted movement
+          if (this.flyMode) {
+            this.player.velocity.set(0, 0, 0);
+          }
           event.preventDefault();
         }
         break;
@@ -119,6 +139,12 @@ export class Controls {
         break;
       case 'Space':
         this.keys.jump = false;
+        break;
+      case 'KeyE':
+        this.keys.up = false;
+        break;
+      case 'KeyQ':
+        this.keys.down = false;
         break;
     }
   }
@@ -237,7 +263,8 @@ export class Controls {
     // Calculate movement direction relative to camera
     const moveDirection = {
       x: 0,
-      z: 0
+      z: 0,
+      y: 0  // Vertical movement for fly mode
     };
 
     if (this.isLocked) {
@@ -258,22 +285,36 @@ export class Controls {
         moveDirection.z -= Math.sin(this.yaw);
       }
 
-      // Normalize movement direction
+      // Normalize horizontal movement direction
       const length = Math.sqrt(moveDirection.x * moveDirection.x + moveDirection.z * moveDirection.z);
       if (length > 0) {
         moveDirection.x /= length;
         moveDirection.z /= length;
       }
 
-      // Handle jump
-      if (this.keys.jump) {
+      // Handle vertical movement in fly mode
+      if (this.flyMode) {
+        if (this.keys.up) {
+          moveDirection.y = 1;
+        }
+        if (this.keys.down) {
+          moveDirection.y = -1;
+        }
+      }
+
+      // Handle jump (only when not in fly mode)
+      if (!this.flyMode && this.keys.jump) {
         this.player.jump();
         this.keys.jump = false; // Prevent continuous jumping
       }
     }
 
-    // Always apply physics (gravity, collision) even when not locked
-    this.player.move(deltaTime, moveDirection);
+    // Apply movement - use fly mode if enabled, otherwise use normal movement
+    if (this.flyMode) {
+      this.player.flyMove(deltaTime, moveDirection);
+    } else {
+      this.player.move(deltaTime, moveDirection);
+    }
   }
 
   // Get currently selected block type

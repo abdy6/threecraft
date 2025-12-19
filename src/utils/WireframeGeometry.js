@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { CONFIG } from '../config.js';
 
 // Generate wireframe edges for visible block faces
 export function generateChunkWireframe(chunk, chunkX, chunkZ) {

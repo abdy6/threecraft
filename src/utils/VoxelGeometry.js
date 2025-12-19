@@ -82,10 +82,11 @@ export function generateChunkMesh(chunk, chunkX, chunkZ) {
     }
 
     // Add indices (two triangles per face)
-    // Counter-clockwise winding when viewed from outside (normal direction)
+    // Clockwise winding when viewed from outside (normal direction)
+    // This makes faces visible from the outside with FrontSide
     indices.push(
-      vertexOffset, vertexOffset + 1, vertexOffset + 2,
-      vertexOffset, vertexOffset + 2, vertexOffset + 3
+      vertexOffset, vertexOffset + 2, vertexOffset + 1,
+      vertexOffset, vertexOffset + 3, vertexOffset + 2
     );
 
     vertexOffset += 4;

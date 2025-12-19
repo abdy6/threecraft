@@ -2,6 +2,10 @@ import { Chunk } from './Chunk.js';
 import { Block } from './Block.js';
 import { CONFIG } from '../config.js';
 
+// Chunk dimensions (hardcoded)
+const CHUNK_WIDTH = 16;
+const CHUNK_DEPTH = 16;
+
 export class World {
   constructor() {
     this.chunks = new Map();
@@ -12,7 +16,6 @@ export class World {
   // Generate a flat world
   generateWorld() {
     const { WIDTH, DEPTH } = CONFIG.WORLD_SIZE;
-    const { WIDTH: CHUNK_WIDTH, DEPTH: CHUNK_DEPTH } = CONFIG.CHUNK_SIZE;
 
     // Generate chunks
     for (let chunkZ = 0; chunkZ < DEPTH; chunkZ++) {
@@ -43,7 +46,6 @@ export class World {
 
   // Convert world coordinates to chunk coordinates
   worldToChunk(worldX, worldZ) {
-    const { WIDTH: CHUNK_WIDTH, DEPTH: CHUNK_DEPTH } = CONFIG.CHUNK_SIZE;
     const chunkX = Math.floor(worldX / CHUNK_WIDTH);
     const chunkZ = Math.floor(worldZ / CHUNK_DEPTH);
     return { chunkX, chunkZ };
@@ -51,7 +53,6 @@ export class World {
 
   // Convert world coordinates to local chunk coordinates
   worldToLocal(worldX, worldY, worldZ) {
-    const { WIDTH: CHUNK_WIDTH, DEPTH: CHUNK_DEPTH } = CONFIG.CHUNK_SIZE;
     const chunkX = Math.floor(worldX / CHUNK_WIDTH);
     const chunkZ = Math.floor(worldZ / CHUNK_DEPTH);
     const localX = worldX - chunkX * CHUNK_WIDTH;

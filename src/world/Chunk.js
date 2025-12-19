@@ -1,5 +1,9 @@
 import { Block } from './Block.js';
-import { CONFIG } from '../config.js';
+
+// Chunk dimensions (hardcoded)
+const CHUNK_WIDTH = 16;
+const CHUNK_HEIGHT = 128;
+const CHUNK_DEPTH = 16;
 
 export class Chunk {
   constructor(chunkX, chunkZ) {
@@ -10,12 +14,11 @@ export class Chunk {
     this.needsUpdate = true;
 
     // Initialize 3D array: blocks[z][y][x]
-    const { WIDTH, HEIGHT, DEPTH } = CONFIG.CHUNK_SIZE;
-    for (let z = 0; z < DEPTH; z++) {
+    for (let z = 0; z < CHUNK_DEPTH; z++) {
       this.blocks[z] = [];
-      for (let y = 0; y < HEIGHT; y++) {
+      for (let y = 0; y < CHUNK_HEIGHT; y++) {
         this.blocks[z][y] = [];
-        for (let x = 0; x < WIDTH; x++) {
+        for (let x = 0; x < CHUNK_WIDTH; x++) {
           this.blocks[z][y][x] = null; // Air by default
         }
       }
@@ -42,16 +45,14 @@ export class Chunk {
 
   // Check if coordinates are out of bounds
   isOutOfBounds(x, y, z) {
-    const { WIDTH, HEIGHT, DEPTH } = CONFIG.CHUNK_SIZE;
-    return x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT || z < 0 || z >= DEPTH;
+    return x < 0 || x >= CHUNK_WIDTH || y < 0 || y >= CHUNK_HEIGHT || z < 0 || z >= CHUNK_DEPTH;
   }
 
   // Check if chunk is empty (no solid blocks)
   isEmpty() {
-    const { WIDTH, HEIGHT, DEPTH } = CONFIG.CHUNK_SIZE;
-    for (let z = 0; z < DEPTH; z++) {
-      for (let y = 0; y < HEIGHT; y++) {
-        for (let x = 0; x < WIDTH; x++) {
+    for (let z = 0; z < CHUNK_DEPTH; z++) {
+      for (let y = 0; y < CHUNK_HEIGHT; y++) {
+        for (let x = 0; x < CHUNK_WIDTH; x++) {
           const block = this.blocks[z][y][x];
           if (block && block.solid) {
             return false;

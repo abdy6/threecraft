@@ -4,6 +4,10 @@ import { generateChunkMesh } from '../utils/VoxelGeometry.js';
 import { generateChunkWireframe } from '../utils/WireframeGeometry.js';
 import { CONFIG } from '../config.js';
 
+// Chunk dimensions (hardcoded)
+const CHUNK_WIDTH = 16;
+const CHUNK_DEPTH = 16;
+
 export class Renderer {
   constructor(container) {
     this.container = container;
@@ -20,10 +24,13 @@ export class Renderer {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     this.scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(50, 100, 50);
     directionalLight.castShadow = false;
     this.scene.add(directionalLight);
+
+    // const light = new THREE.HemisphereLight(0x87ceeb, 0x444444, 1);
+    // this.scene.add(light);
 
     // Store chunk meshes
     this.chunkMeshes = new Map();
@@ -90,11 +97,10 @@ export class Renderer {
       if (geometry) {
         const material = new THREE.MeshLambertMaterial({
           vertexColors: true,
-          side: THREE.DoubleSide  // Render both sides to prevent invisible faces
+          side: THREE.FrontSide
         });
 
         const mesh = new THREE.Mesh(geometry, material);
-        const { WIDTH: CHUNK_WIDTH, DEPTH: CHUNK_DEPTH } = CONFIG.CHUNK_SIZE;
         
         // Position mesh at world coordinates
         mesh.position.set(
@@ -118,7 +124,6 @@ export class Renderer {
         });
 
         const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
-        const { WIDTH: CHUNK_WIDTH, DEPTH: CHUNK_DEPTH } = CONFIG.CHUNK_SIZE;
         
         wireframe.position.set(
           chunk.chunkX * CHUNK_WIDTH,

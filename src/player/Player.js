@@ -51,6 +51,27 @@ export class Player {
     return false;
   }
 
+  // Move player in fly mode (no collision, no gravity)
+  flyMove(deltaTime, moveDirection) {
+    const speed = CONFIG.PLAYER.FLY_SPEED;
+    
+    // Calculate movement vector based on camera direction
+    const moveVector = new THREE.Vector3(
+      moveDirection.x * speed * deltaTime,
+      moveDirection.y * speed * deltaTime,  // Vertical movement
+      moveDirection.z * speed * deltaTime
+    );
+
+    // Apply movement directly without collision checks
+    this.position.add(moveVector);
+    
+    // Reset velocity to prevent gravity from accumulating
+    this.velocity.set(0, 0, 0);
+    this.onGround = false;
+
+    this.updateCameraPosition();
+  }
+
   // Move player with collision detection
   move(deltaTime, moveDirection) {
     const speed = CONFIG.PLAYER.SPEED;
