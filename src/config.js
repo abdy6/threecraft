@@ -26,8 +26,31 @@ export const CONFIG = {
   SHADOWS_ENABLED: true,
   
   // Controls
-  TOGGLE_WIREFRAME_KEY: 'KeyG',  // Key to toggle wireframe grid (default: G)
-  TOGGLE_FLY_KEY: 'KeyF',
+  KEYBINDS: {
+    MOVE_FORWARD: 'KeyW',
+    MOVE_BACKWARD: 'KeyS',
+    MOVE_LEFT: 'KeyA',
+    MOVE_RIGHT: 'KeyD',
+    JUMP: 'Space',
+    FLY_UP: 'KeyE',
+    FLY_DOWN: 'KeyQ',
+    TOGGLE_FLY: 'KeyF',
+    TOGGLE_WIREFRAME: 'KeyG',
+    PAUSE: 'KeyP',
+  },
+  // Keybind descriptions for display in controls screen
+  KEYBIND_DESCRIPTIONS: {
+    MOVE_FORWARD: 'Move Forward',
+    MOVE_BACKWARD: 'Move Backward',
+    MOVE_LEFT: 'Move Left',
+    MOVE_RIGHT: 'Move Right',
+    JUMP: 'Jump',
+    FLY_UP: 'Fly Up',
+    FLY_DOWN: 'Fly Down',
+    TOGGLE_FLY: 'Toggle Flying',
+    TOGGLE_WIREFRAME: 'Toggle Wireframe',
+    PAUSE: 'Pause Game',
+  },
   SHOW_TOUCH_CONTROLS: false,  // Force show touch controls regardless of device
   MOUSE_SENSITIVITY: 0.002,
   TOUCH_SENSITIVITY: 0.005,

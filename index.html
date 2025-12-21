@@ -55,8 +55,8 @@
 
     #instructions {
       position: absolute;
-      top: 20px;
-      left: 20px;
+      top: 10px;
+      left: 10px;
       color: white;
       background: rgba(0, 0, 0, 0.5);
       padding: 15px;
@@ -68,8 +68,8 @@
 
     #hud {
       position: absolute;
-      top: 20px;
-      right: 20px;
+      top: 10px;
+      right: 10px;
       color: white;
       background: rgba(0, 0, 0, 0.7);
       padding: 10px 15px;
@@ -222,17 +222,24 @@
       background: rgba(0, 0, 0, 0.7);
       border: 2px solid rgba(255, 255, 255, 0.3);
       border-radius: 10px;
-      padding: 40px 60px;
+      padding: 30px 30px;
       display: flex;
       flex-direction: column;
       align-items: center;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     }
 
+    #pause-menu-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
     #pause-menu h2 {
       color: white;
       font-size: 32px;
-      margin-bottom: 40px;
+      margin-bottom: 25px;
       text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
     }
 
@@ -259,20 +266,70 @@
     .pause-menu-button:active {
       transform: scale(0.98);
     }
+
+    .pause-subtitle {
+      color: white;
+      font-size: 14px;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    /* Controls Screen */
+    #controls-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    #controls-screen h2 {
+      color: white;
+      font-size: 32px;
+      margin-bottom: 30px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    #controls-list {
+      width: 100%;
+      max-width: 400px;
+      color: white;
+      font-size: 16px;
+      line-height: 2;
+    }
+
+    .control-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .control-description {
+      flex: 1;
+    }
+
+    .control-key {
+      font-family: 'Courier New', monospace;
+      color: rgba(255, 255, 255, 0.8);
+      margin-left: 20px;
+    }
+
+    #controls-back-btn {
+      margin-top: 30px;
+    }
   </style>
 </head>
 <body>
   <div id="canvas-container">
     <div id="crosshair"></div>
     <div id="instructions">
-      <div>WASD - Move | Space - Jump | Mouse - Look Around</div>
-      <div>Left Click - Break Block | Right Click - Place Block</div>
-      <div>Scroll Wheel - Change Block</div>
+      <div>Press P to toggle menu</div>
     </div>
     <div id="hud">
       <div id="hud-world-pos">World: (0, 0, 0)</div>
       <div id="hud-chunk-pos">Chunk: (0, 0) Local: (0, 0)</div>
       <div id="hud-fps">FPS: 0</div>
+      <div id="hud-fly-mode">Flying: false</div>
       <div id="hud-selected-block">Block: GRASS</div>
     </div>
     
@@ -287,10 +344,22 @@
     <!-- Pause Menu -->
     <div id="pause-menu">
       <div id="pause-menu-content">
-        <h2>Paused</h2>
-        <button id="pause-resume-btn" class="pause-menu-button">Resume</button>
-        <button id="pause-controls-btn" class="pause-menu-button">Controls</button>
-        <button id="pause-info-btn" class="pause-menu-button">Info & Changelog</button>
+        <!-- Main Pause Menu -->
+        <div id="pause-menu-screen">
+          <h2>Paused</h2>
+          <button id="pause-resume-btn" class="pause-menu-button">Resume</button>
+          <button id="pause-toggle-hud-btn" class="pause-menu-button" title="Toggle info in the top right">Toggle HUD</button>
+          <button id="pause-controls-btn" class="pause-menu-button">Controls</button>
+          <button id="pause-info-btn" class="pause-menu-button">Changelog</button>
+          <p class="pause-subtitle">Press P to close this menu</p>
+        </div>
+        
+        <!-- Controls Screen -->
+        <div id="controls-screen">
+          <h2>Controls</h2>
+          <div id="controls-list"></div>
+          <button id="controls-back-btn" class="pause-menu-button">Back</button>
+        </div>
       </div>
     </div>
   </div>

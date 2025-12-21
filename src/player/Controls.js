@@ -90,40 +90,40 @@ export class Controls {
 
   onKeyDown(event) {
     switch (event.code) {
-      case 'KeyW':
+      case CONFIG.KEYBINDS.MOVE_FORWARD:
         this.keys.forward = true;
         break;
-      case 'KeyS':
+      case CONFIG.KEYBINDS.MOVE_BACKWARD:
         this.keys.backward = true;
         break;
-      case 'KeyA':
+      case CONFIG.KEYBINDS.MOVE_LEFT:
         this.keys.left = true;
         break;
-      case 'KeyD':
+      case CONFIG.KEYBINDS.MOVE_RIGHT:
         this.keys.right = true;
         break;
-      case 'Space':
+      case CONFIG.KEYBINDS.JUMP:
         this.keys.jump = true;
         event.preventDefault();
         break;
-      case 'KeyE':
+      case CONFIG.KEYBINDS.FLY_UP:
         this.keys.up = true;
         break;
-      case 'KeyQ':
+      case CONFIG.KEYBINDS.FLY_DOWN:
         this.keys.down = true;
         break;
-      case 'KeyP':
+      case CONFIG.KEYBINDS.PAUSE:
         this.togglePause();
         event.preventDefault();
         break;
       default:
         // Check for wireframe toggle key
-        if (event.code === CONFIG.TOGGLE_WIREFRAME_KEY) {
+        if (event.code === CONFIG.KEYBINDS.TOGGLE_WIREFRAME) {
           this.renderer.toggleWireframe();
           event.preventDefault();
         }
         // Check for fly mode toggle key
-        else if (event.code === CONFIG.TOGGLE_FLY_KEY) {
+        else if (event.code === CONFIG.KEYBINDS.TOGGLE_FLY) {
           this.flyMode = !this.flyMode;
           // Reset velocity when toggling fly mode to prevent unwanted movement
           if (this.flyMode) {
@@ -137,25 +137,25 @@ export class Controls {
 
   onKeyUp(event) {
     switch (event.code) {
-      case 'KeyW':
+      case CONFIG.KEYBINDS.MOVE_FORWARD:
         this.keys.forward = false;
         break;
-      case 'KeyS':
+      case CONFIG.KEYBINDS.MOVE_BACKWARD:
         this.keys.backward = false;
         break;
-      case 'KeyA':
+      case CONFIG.KEYBINDS.MOVE_LEFT:
         this.keys.left = false;
         break;
-      case 'KeyD':
+      case CONFIG.KEYBINDS.MOVE_RIGHT:
         this.keys.right = false;
         break;
-      case 'Space':
+      case CONFIG.KEYBINDS.JUMP:
         this.keys.jump = false;
         break;
-      case 'KeyE':
+      case CONFIG.KEYBINDS.FLY_UP:
         this.keys.up = false;
         break;
-      case 'KeyQ':
+      case CONFIG.KEYBINDS.FLY_DOWN:
         this.keys.down = false;
         break;
     }
@@ -482,8 +482,19 @@ export class Controls {
   // Show pause menu
   showPauseMenu() {
     const pauseMenu = document.getElementById('pause-menu');
+    const pauseMenuScreen = document.getElementById('pause-menu-screen');
+    const controlsScreen = document.getElementById('controls-screen');
+    
     if (pauseMenu) {
       pauseMenu.style.display = 'flex';
+    }
+    
+    // Reset to pause menu screen (not controls screen)
+    if (pauseMenuScreen) {
+      pauseMenuScreen.style.display = 'flex';
+    }
+    if (controlsScreen) {
+      controlsScreen.style.display = 'none';
     }
   }
 
@@ -498,6 +509,11 @@ export class Controls {
   // Check if game is paused
   getPaused() {
     return this.isPaused;
+  }
+
+  // Get fly mode state
+  getFlyMode() {
+    return this.flyMode;
   }
 }
 

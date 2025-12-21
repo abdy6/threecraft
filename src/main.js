@@ -3,6 +3,7 @@ import { Player } from './player/Player.js';
 import { Controls } from './player/Controls.js';
 import { Renderer } from './rendering/Renderer.js';
 import { raycast } from './utils/Raycast.js';
+import { CONFIG } from './config.js';
 
 // Initialize game
 const container = document.getElementById('canvas-container');
@@ -26,7 +27,12 @@ let currentFPS = 0;
 const hudWorldPos = document.getElementById('hud-world-pos');
 const hudChunkPos = document.getElementById('hud-chunk-pos');
 const hudFPS = document.getElementById('hud-fps');
+const hudFlyMode = document.getElementById('hud-fly-mode');
 const hudSelectedBlock = document.getElementById('hud-selected-block');
+const hud = document.getElementById('hud');
+
+// HUD visibility state
+let hudVisible = true;
 
 // Handle tab visibility changes
 document.addEventListener('visibilitychange', () => {
@@ -98,6 +104,9 @@ function updateHUD() {
   // FPS
   hudFPS.textContent = `FPS: ${currentFPS}`;
   
+  // Fly mode
+  hudFlyMode.textContent = `Flying: ${controls.getFlyMode()}`;
+  
   // Selected block
   hudSelectedBlock.textContent = `Block: ${controls.getSelectedBlockType()}`;
 }
@@ -109,8 +118,70 @@ window.addEventListener('resize', () => {
 
 // Setup pause menu button handlers
 const pauseResumeBtn = document.getElementById('pause-resume-btn');
+const pauseToggleHudBtn = document.getElementById('pause-toggle-hud-btn');
 const pauseControlsBtn = document.getElementById('pause-controls-btn');
 const pauseInfoBtn = document.getElementById('pause-info-btn');
+const pauseMenuScreen = document.getElementById('pause-menu-screen');
+const controlsScreen = document.getElementById('controls-screen');
+const controlsBackBtn = document.getElementById('controls-back-btn');
+const controlsList = document.getElementById('controls-list');
+
+// Function to toggle HUD visibility
+function toggleHUD() {
+  hudVisible = !hudVisible;
+  if (hud) {
+    if (hudVisible) {
+      // Remove inline style to restore default CSS display
+      hud.style.display = '';
+    } else {
+      hud.style.display = 'none';
+    }
+  }
+}
+
+// Function to format key code for display
+function formatKeyCode(keyCode) {
+  // Remove "Key" prefix from key codes like "KeyW" -> "W"
+  if (keyCode.startsWith('Key')) {
+    return keyCode.substring(3);
+  }
+  // Return as-is for special keys like "Space"
+  return keyCode;
+}
+
+// Function to show controls screen
+function showControlsScreen() {
+  if (pauseMenuScreen) pauseMenuScreen.style.display = 'none';
+  if (controlsScreen) controlsScreen.style.display = 'flex';
+  
+  // Populate controls list
+  if (controlsList) {
+    controlsList.innerHTML = '';
+    for (const [key, keyCode] of Object.entries(CONFIG.KEYBINDS)) {
+      const description = CONFIG.KEYBIND_DESCRIPTIONS[key] || key;
+      const controlItem = document.createElement('div');
+      controlItem.className = 'control-item';
+      
+      const descSpan = document.createElement('span');
+      descSpan.className = 'control-description';
+      descSpan.textContent = description;
+      
+      const keySpan = document.createElement('span');
+      keySpan.className = 'control-key';
+      keySpan.textContent = formatKeyCode(keyCode);
+      
+      controlItem.appendChild(descSpan);
+      controlItem.appendChild(keySpan);
+      controlsList.appendChild(controlItem);
+    }
+  }
+}
+
+// Function to show pause menu screen
+function showPauseMenuScreen() {
+  if (pauseMenuScreen) pauseMenuScreen.style.display = 'flex';
+  if (controlsScreen) controlsScreen.style.display = 'none';
+}
 
 if (pauseResumeBtn) {
   pauseResumeBtn.addEventListener('click', () => {
@@ -118,10 +189,21 @@ if (pauseResumeBtn) {
   });
 }
 
+if (pauseToggleHudBtn) {
+  pauseToggleHudBtn.addEventListener('click', () => {
+    toggleHUD();
+  });
+}
+
 if (pauseControlsBtn) {
   pauseControlsBtn.addEventListener('click', () => {
-    // Placeholder for controls
-    console.log('Controls clicked');
+    showControlsScreen();
+  });
+}
+
+if (controlsBackBtn) {
+  controlsBackBtn.addEventListener('click', () => {
+    showPauseMenuScreen();
   });
 }
 
