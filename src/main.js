@@ -34,6 +34,9 @@ const hud = document.getElementById('hud');
 // HUD visibility state
 let hudVisible = true;
 
+// Changelog content (loaded once at startup)
+let changelogText = '';
+
 // Handle tab visibility changes
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
@@ -62,6 +65,9 @@ function animate() {
     frameCount = 0;
     fpsLastTime = currentTime;
   }
+
+  // Always check pause input (even when paused, so we can unpause)
+  controls.checkPauseInput();
 
   // Only update game logic if tab is visible and not paused
   if (isTabVisible && !controls.getPaused()) {
@@ -125,6 +131,9 @@ const pauseMenuScreen = document.getElementById('pause-menu-screen');
 const controlsScreen = document.getElementById('controls-screen');
 const controlsBackBtn = document.getElementById('controls-back-btn');
 const controlsList = document.getElementById('controls-list');
+const changelogScreen = document.getElementById('changelog-screen');
+const changelogBackBtn = document.getElementById('changelog-back-btn');
+const changelogContent = document.getElementById('changelog-content');
 
 // Function to toggle HUD visibility
 function toggleHUD() {
@@ -181,6 +190,39 @@ function showControlsScreen() {
 function showPauseMenuScreen() {
   if (pauseMenuScreen) pauseMenuScreen.style.display = 'flex';
   if (controlsScreen) controlsScreen.style.display = 'none';
+  if (changelogScreen) changelogScreen.style.display = 'none';
+}
+
+// Function to show changelog screen
+function showChangelogScreen() {
+  if (pauseMenuScreen) pauseMenuScreen.style.display = 'none';
+  if (controlsScreen) controlsScreen.style.display = 'none';
+  if (changelogScreen) changelogScreen.style.display = 'flex';
+  
+  // Display cached changelog content
+  if (changelogContent) {
+    changelogContent.textContent = changelogText;
+  }
+}
+
+// Load changelog once at startup
+async function loadChangelog() {
+  try {
+    const response = await fetch('/threecraft/changelog.txt');
+    if (response.ok) {
+      changelogText = await response.text();
+    } else {
+      changelogText = 'Unable to load changelog.';
+    }
+  } catch (error) {
+    changelogText = 'Error loading changelog.';
+    console.error('Error loading changelog:', error);
+  }
+  
+  // Display initial content (even if empty)
+  if (changelogContent) {
+    changelogContent.textContent = changelogText;
+  }
 }
 
 if (pauseResumeBtn) {
@@ -209,10 +251,18 @@ if (controlsBackBtn) {
 
 if (pauseInfoBtn) {
   pauseInfoBtn.addEventListener('click', () => {
-    // Placeholder for info & changelog
-    console.log('Info & Changelog clicked');
+    showChangelogScreen();
   });
 }
+
+if (changelogBackBtn) {
+  changelogBackBtn.addEventListener('click', () => {
+    showPauseMenuScreen();
+  });
+}
+
+// Load changelog at startup
+loadChangelog();
 
 // Start game loop
 animate();

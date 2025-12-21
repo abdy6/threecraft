@@ -10,7 +10,10 @@ export class Controls {
     // Initialize touch controls
     this.touchControls = new TouchControls();
 
-    // Movement state
+    // Track pressed keys using Set for reliable input handling
+    this.pressed = new Set();
+
+    // Movement state (populated from pressed Set in update())
     this.keys = {
       forward: false,
       backward: false,
@@ -23,6 +26,11 @@ export class Controls {
 
     // Fly mode state
     this.flyMode = false;
+
+    // Track previous key states for edge detection
+    this.wasPausePressed = false;
+    this.wasWireframeTogglePressed = false;
+    this.wasFlyTogglePressed = false;
 
     // Mouse state
     this.mouseX = 0;
@@ -89,83 +97,29 @@ export class Controls {
   }
 
   onKeyDown(event) {
-    switch (event.code) {
-      case CONFIG.KEYBINDS.MOVE_FORWARD:
-        this.keys.forward = true;
-        break;
-      case CONFIG.KEYBINDS.MOVE_BACKWARD:
-        this.keys.backward = true;
-        break;
-      case CONFIG.KEYBINDS.MOVE_LEFT:
-        this.keys.left = true;
-        break;
-      case CONFIG.KEYBINDS.MOVE_RIGHT:
-        this.keys.right = true;
-        break;
-      case CONFIG.KEYBINDS.JUMP:
-        this.keys.jump = true;
-        event.preventDefault();
-        break;
-      case CONFIG.KEYBINDS.FLY_UP:
-        this.keys.up = true;
-        break;
-      case CONFIG.KEYBINDS.FLY_DOWN:
-        this.keys.down = true;
-        break;
-      case CONFIG.KEYBINDS.PAUSE:
-        this.togglePause();
-        event.preventDefault();
-        break;
-      default:
-        // Check for wireframe toggle key
-        if (event.code === CONFIG.KEYBINDS.TOGGLE_WIREFRAME) {
-          this.renderer.toggleWireframe();
-          event.preventDefault();
-        }
-        // Check for fly mode toggle key
-        else if (event.code === CONFIG.KEYBINDS.TOGGLE_FLY) {
-          this.flyMode = !this.flyMode;
-          // Reset velocity when toggling fly mode to prevent unwanted movement
-          if (this.flyMode) {
-            this.player.velocity.set(0, 0, 0);
-          }
-          event.preventDefault();
-        }
-        break;
+    // Add key to pressed Set
+    this.pressed.add(event.code);
+    // console.log('down', event.code);
+    // Prevent default for keys that shouldn't trigger browser behavior
+    if (event.code === CONFIG.KEYBINDS.JUMP ||
+        event.code === CONFIG.KEYBINDS.PAUSE ||
+        event.code === CONFIG.KEYBINDS.TOGGLE_WIREFRAME ||
+        event.code === CONFIG.KEYBINDS.TOGGLE_FLY) {
+      event.preventDefault();
     }
   }
 
   onKeyUp(event) {
-    switch (event.code) {
-      case CONFIG.KEYBINDS.MOVE_FORWARD:
-        this.keys.forward = false;
-        break;
-      case CONFIG.KEYBINDS.MOVE_BACKWARD:
-        this.keys.backward = false;
-        break;
-      case CONFIG.KEYBINDS.MOVE_LEFT:
-        this.keys.left = false;
-        break;
-      case CONFIG.KEYBINDS.MOVE_RIGHT:
-        this.keys.right = false;
-        break;
-      case CONFIG.KEYBINDS.JUMP:
-        this.keys.jump = false;
-        break;
-      case CONFIG.KEYBINDS.FLY_UP:
-        this.keys.up = false;
-        break;
-      case CONFIG.KEYBINDS.FLY_DOWN:
-        this.keys.down = false;
-        break;
-    }
+    // Remove key from pressed Set
+    this.pressed.delete(event.code);
+    // console.log('up', event.code);
   }
 
   onMouseMove(event) {
     // Only process if pointer is locked (this listener should only be active when locked)
     if (!this.isLocked) return;
 
-    // Ignore the first few mouse events after locking to prevent initial jump
+    // Ignore the first few mouse events after locking to prevent initial 
     if (this.framesSinceLock < 2) {
       return;
     }
@@ -275,6 +229,40 @@ export class Controls {
       this.framesSinceLock++;
     }
     
+    // Update keys state from pressed Set
+    this.keys.forward = this.pressed.has(CONFIG.KEYBINDS.MOVE_FORWARD);
+    this.keys.backward = this.pressed.has(CONFIG.KEYBINDS.MOVE_BACKWARD);
+    this.keys.left = this.pressed.has(CONFIG.KEYBINDS.MOVE_LEFT);
+    this.keys.right = this.pressed.has(CONFIG.KEYBINDS.MOVE_RIGHT);
+    this.keys.up = this.pressed.has(CONFIG.KEYBINDS.FLY_UP);
+    this.keys.down = this.pressed.has(CONFIG.KEYBINDS.FLY_DOWN);
+    
+    // Handle edge-detected actions (toggle once per press)
+    // Note: Pause is handled separately in checkPauseInput() so it works even when paused
+    const isWireframeTogglePressed = this.pressed.has(CONFIG.KEYBINDS.TOGGLE_WIREFRAME);
+    if (isWireframeTogglePressed && !this.wasWireframeTogglePressed) {
+      this.renderer.toggleWireframe();
+    }
+    this.wasWireframeTogglePressed = isWireframeTogglePressed;
+
+    const isFlyTogglePressed = this.pressed.has(CONFIG.KEYBINDS.TOGGLE_FLY);
+    if (isFlyTogglePressed && !this.wasFlyTogglePressed) {
+      this.flyMode = !this.flyMode;
+      // Reset velocity when toggling fly mode to prevent unwanted movement
+      if (this.flyMode) {
+        this.player.velocity.set(0, 0, 0);
+      }
+    }
+    this.wasFlyTogglePressed = isFlyTogglePressed;
+
+    // Handle jump (continuous while held, only when not in fly mode)
+    this.keys.jump = this.pressed.has(CONFIG.KEYBINDS.JUMP);
+    if (!this.flyMode) {
+      if (this.keys.jump || (this.touchControls.isEnabled() && this.touchControls.isTouchJumpPressed())) {
+        this.player.jump();
+      }
+    }
+    
     // Handle touch camera rotation
     if (this.touchControls.isEnabled() && this.touchControls.cameraRotationActive) {
       const touchRotation = this.touchControls.getTouchRotation();
@@ -352,14 +340,6 @@ export class Controls {
         if (this.keys.down) {
           moveDirection.y = -1;
         }
-      }
-    }
-    
-    // Handle jump (only when not in fly mode) - works independently of movement
-    if (!this.flyMode) {
-      if (this.keys.jump || (this.touchControls.isEnabled() && this.touchControls.isTouchJumpPressed())) {
-        this.player.jump();
-        this.keys.jump = false; // Prevent continuous jumping
       }
     }
     
@@ -464,6 +444,15 @@ export class Controls {
     }
   }
 
+  // Check pause key input (called even when paused)
+  checkPauseInput() {
+    const isPausePressed = this.pressed.has(CONFIG.KEYBINDS.PAUSE);
+    if (isPausePressed && !this.wasPausePressed) {
+      this.togglePause();
+    }
+    this.wasPausePressed = isPausePressed;
+  }
+
   // Toggle pause state
   togglePause() {
     this.isPaused = !this.isPaused;
@@ -484,17 +473,21 @@ export class Controls {
     const pauseMenu = document.getElementById('pause-menu');
     const pauseMenuScreen = document.getElementById('pause-menu-screen');
     const controlsScreen = document.getElementById('controls-screen');
+    const changelogScreen = document.getElementById('changelog-screen');
     
     if (pauseMenu) {
       pauseMenu.style.display = 'flex';
     }
     
-    // Reset to pause menu screen (not controls screen)
+    // Reset to pause menu screen (not controls or changelog screen)
     if (pauseMenuScreen) {
       pauseMenuScreen.style.display = 'flex';
     }
     if (controlsScreen) {
       controlsScreen.style.display = 'none';
+    }
+    if (changelogScreen) {
+      changelogScreen.style.display = 'none';
     }
   }
 

@@ -1,0 +1,4 @@
+2025-12-21
+- Pause menu with toggleable HUD, controls info, and changelog (what you're reading right now!)
+- Improved key input handling
+- All keybinds are now configurable in config.js
