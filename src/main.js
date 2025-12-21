@@ -208,7 +208,7 @@ function showChangelogScreen() {
 // Load changelog once at startup
 async function loadChangelog() {
   try {
-    const response = await fetch('/threecraft/changelog.txt');
+    const response = await fetch(`${import.meta.env.BASE_URL}changelog.txt`);
     if (response.ok) {
       changelogText = await response.text();
     } else {
