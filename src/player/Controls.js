@@ -38,6 +38,9 @@ export class Controls {
     // Track frames since lock to ignore initial large movements
     this.framesSinceLock = 0;
 
+    // Pause state
+    this.isPaused = false;
+
     // Block selection
     this.placeableBlocks = CONFIG.PLACEABLE_BLOCKS;
     this.selectedBlockIndex = 0;
@@ -108,6 +111,10 @@ export class Controls {
         break;
       case 'KeyQ':
         this.keys.down = true;
+        break;
+      case 'KeyP':
+        this.togglePause();
+        event.preventDefault();
         break;
       default:
         // Check for wireframe toggle key
@@ -455,6 +462,42 @@ export class Controls {
     if (this.renderer.updateSelectedBlock) {
       this.renderer.updateSelectedBlock(this.selectedBlockType);
     }
+  }
+
+  // Toggle pause state
+  togglePause() {
+    this.isPaused = !this.isPaused;
+    
+    // Unlock pointer when pausing
+    if (this.isPaused) {
+      if (this.isLocked && document.pointerLockElement) {
+        document.exitPointerLock();
+      }
+      this.showPauseMenu();
+    } else {
+      this.hidePauseMenu();
+    }
+  }
+
+  // Show pause menu
+  showPauseMenu() {
+    const pauseMenu = document.getElementById('pause-menu');
+    if (pauseMenu) {
+      pauseMenu.style.display = 'flex';
+    }
+  }
+
+  // Hide pause menu
+  hidePauseMenu() {
+    const pauseMenu = document.getElementById('pause-menu');
+    if (pauseMenu) {
+      pauseMenu.style.display = 'none';
+    }
+  }
+
+  // Check if game is paused
+  getPaused() {
+    return this.isPaused;
   }
 }
 

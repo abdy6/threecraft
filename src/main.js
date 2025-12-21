@@ -57,8 +57,8 @@ function animate() {
     fpsLastTime = currentTime;
   }
 
-  // Only update game logic if tab is visible
-  if (isTabVisible) {
+  // Only update game logic if tab is visible and not paused
+  if (isTabVisible && !controls.getPaused()) {
     // Update controls and player
     controls.update(deltaTime);
 
@@ -106,6 +106,31 @@ function updateHUD() {
 window.addEventListener('resize', () => {
   renderer.onWindowResize(player.getCamera());
 });
+
+// Setup pause menu button handlers
+const pauseResumeBtn = document.getElementById('pause-resume-btn');
+const pauseControlsBtn = document.getElementById('pause-controls-btn');
+const pauseInfoBtn = document.getElementById('pause-info-btn');
+
+if (pauseResumeBtn) {
+  pauseResumeBtn.addEventListener('click', () => {
+    controls.togglePause();
+  });
+}
+
+if (pauseControlsBtn) {
+  pauseControlsBtn.addEventListener('click', () => {
+    // Placeholder for controls
+    console.log('Controls clicked');
+  });
+}
+
+if (pauseInfoBtn) {
+  pauseInfoBtn.addEventListener('click', () => {
+    // Placeholder for info & changelog
+    console.log('Info & Changelog clicked');
+  });
+}
 
 // Start game loop
 animate();
