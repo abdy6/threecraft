@@ -18,12 +18,12 @@ renderer.initializeWorld(world);
 renderer.camera = player.getCamera();
 
 // Initialize stats.js for FPS monitoring
-const stats = new Stats();
-stats.showPanel(2); // 0: fps, 1: ms, 2: mb
-stats.dom.style.position = 'absolute';
-stats.dom.style.top = '0px';
-stats.dom.style.left = '0px';
-document.body.appendChild(stats.dom);
+// const stats = new Stats();
+// stats.showPanel(2); // 0: fps, 1: ms, 2: mb
+// stats.dom.style.position = 'absolute';
+// stats.dom.style.top = '0px';
+// stats.dom.style.left = '0px';
+// document.body.appendChild(stats.dom);
 
 // Game loop
 let lastTime = performance.now();
@@ -69,7 +69,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 function animate() {
-  stats.begin();
+  // stats.begin();
   
   const currentTime = performance.now();
   let deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
@@ -143,7 +143,7 @@ function animate() {
   // Always render (even when tab is hidden, to prevent issues)
   renderer.render(player.getCamera());
 
-  stats.end();
+  // stats.end();
   
   requestAnimationFrame(animate);
 }
