@@ -36,6 +36,8 @@ export const CONFIG = {
     FLY_DOWN: 'KeyQ',
     TOGGLE_FLY: 'KeyF',
     TOGGLE_WIREFRAME: 'KeyG',
+    TOGGLE_LIGHTS: 'KeyL',
+    TOGGLE_POINT_LIGHT: 'KeyV',
     PAUSE: 'KeyP',
   },
   // Keybind descriptions for display in controls screen
@@ -49,6 +51,8 @@ export const CONFIG = {
     FLY_DOWN: 'Fly Down',
     TOGGLE_FLY: 'Toggle Flying',
     TOGGLE_WIREFRAME: 'Toggle Wireframe',
+    TOGGLE_LIGHTS: 'Toggle Day/Night',
+    TOGGLE_POINT_LIGHT: 'Toggle Flashlight',
     PAUSE: 'Pause Game',
   },
   SHOW_TOUCH_CONTROLS: false,  // Force show touch controls regardless of device

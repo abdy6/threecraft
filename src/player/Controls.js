@@ -31,6 +31,8 @@ export class Controls {
     this.wasPausePressed = false;
     this.wasWireframeTogglePressed = false;
     this.wasFlyTogglePressed = false;
+    this.wasLightsTogglePressed = false;
+    this.wasPointLightTogglePressed = false;
 
     // Mouse state
     this.mouseX = 0;
@@ -104,7 +106,9 @@ export class Controls {
     if (event.code === CONFIG.KEYBINDS.JUMP ||
         event.code === CONFIG.KEYBINDS.PAUSE ||
         event.code === CONFIG.KEYBINDS.TOGGLE_WIREFRAME ||
-        event.code === CONFIG.KEYBINDS.TOGGLE_FLY) {
+        event.code === CONFIG.KEYBINDS.TOGGLE_FLY ||
+        event.code === CONFIG.KEYBINDS.TOGGLE_LIGHTS ||
+        event.code === CONFIG.KEYBINDS.TOGGLE_POINT_LIGHT) {
       event.preventDefault();
     }
   }
@@ -201,7 +205,10 @@ export class Controls {
                 placePos.y >= minY && placePos.y <= maxY &&
                 placePos.z >= playerPos.z - halfWidth && placePos.z <= playerPos.z + halfWidth;
 
-              if (!inPlayerBounds && !this.world.isSolid(placePos.x, placePos.y, placePos.z)) {
+              // Check if block would overlap with player's footprint
+              const inPlayerFootprint = this.isBlockInPlayerFootprint(placePos.x, placePos.y, placePos.z);
+              
+              if (!inPlayerFootprint && !this.world.isSolid(placePos.x, placePos.y, placePos.z)) {
                 // Use the selected block type (convert to ID)
                 const blockId = Block.getId(this.selectedBlockType);
                 this.world.setBlock(placePos.x, placePos.y, placePos.z, blockId);
@@ -253,6 +260,18 @@ export class Controls {
       }
     }
     this.wasFlyTogglePressed = isFlyTogglePressed;
+
+    const isLightsTogglePressed = this.pressed.has(CONFIG.KEYBINDS.TOGGLE_LIGHTS);
+    if (isLightsTogglePressed && !this.wasLightsTogglePressed) {
+      this.renderer.toggleLights();
+    }
+    this.wasLightsTogglePressed = isLightsTogglePressed;
+
+    const isPointLightTogglePressed = this.pressed.has(CONFIG.KEYBINDS.TOGGLE_POINT_LIGHT);
+    if (isPointLightTogglePressed && !this.wasPointLightTogglePressed) {
+      this.renderer.toggleSpotLight();
+    }
+    this.wasPointLightTogglePressed = isPointLightTogglePressed;
 
     // Handle jump (continuous while held, only when not in fly mode)
     this.keys.jump = this.pressed.has(CONFIG.KEYBINDS.JUMP);
@@ -367,6 +386,36 @@ export class Controls {
   getSelectedBlockType() {
     return this.selectedBlockType;
   }
+
+  // Check if a block position overlaps with the player's footprint
+  // Blocks are 1x1x1 cubes, so we need to check if the block's bounding box overlaps the player's
+  isBlockInPlayerFootprint(blockX, blockY, blockZ) {
+    const playerPos = this.player.position;
+    const halfWidth = this.player.width / 2;
+    const minY = playerPos.y;
+    const maxY = playerPos.y + this.player.height;
+    
+    // Block bounding box (block is at integer coordinates, so it spans from blockX to blockX+1, etc.)
+    const blockMinX = blockX;
+    const blockMaxX = blockX + 1;
+    const blockMinY = blockY;
+    const blockMaxY = blockY + 1;
+    const blockMinZ = blockZ;
+    const blockMaxZ = blockZ + 1;
+    
+    // Player bounding box
+    const playerMinX = playerPos.x - halfWidth;
+    const playerMaxX = playerPos.x + halfWidth;
+    const playerMinZ = playerPos.z - halfWidth;
+    const playerMaxZ = playerPos.z + halfWidth;
+    
+    // Check for overlap (AABB collision detection)
+    return !(
+      blockMaxX <= playerMinX || blockMinX >= playerMaxX ||
+      blockMaxY <= minY || blockMinY >= maxY ||
+      blockMaxZ <= playerMinZ || blockMinZ >= playerMaxZ
+    );
+  }
   
   // Handle block placement (called from touch controls)
   handlePlaceBlock() {
@@ -381,18 +430,10 @@ export class Controls {
         if (result.hit) {
           const placePos = getPlacePosition(result);
           if (placePos) {
-            // Check if position is not inside player
-            const playerPos = this.player.position;
-            const halfWidth = this.player.width / 2;
-            const minY = playerPos.y;
-            const maxY = playerPos.y + this.player.height;
-
-            const inPlayerBounds = 
-              placePos.x >= playerPos.x - halfWidth && placePos.x <= playerPos.x + halfWidth &&
-              placePos.y >= minY && placePos.y <= maxY &&
-              placePos.z >= playerPos.z - halfWidth && placePos.z <= playerPos.z + halfWidth;
-
-            if (!inPlayerBounds && !this.world.isSolid(placePos.x, placePos.y, placePos.z)) {
+            // Check if block would overlap with player's footprint
+            const inPlayerFootprint = this.isBlockInPlayerFootprint(placePos.x, placePos.y, placePos.z);
+            
+            if (!inPlayerFootprint && !this.world.isSolid(placePos.x, placePos.y, placePos.z)) {
               // Use the selected block type (convert to ID)
               const blockId = Block.getId(this.selectedBlockType);
               this.world.setBlock(placePos.x, placePos.y, placePos.z, blockId);

@@ -295,10 +295,18 @@
 
     #controls-list {
       width: 100%;
-      max-width: 400px;
+      max-width: 800px;
+      height: 60vh;
+      max-height: 60vh;
       color: white;
       font-size: 16px;
       line-height: 2;
+      display: flex;
+      flex-direction: column;
+      flex-wrap: wrap;
+      align-content: center;
+      gap: 0 20px;
+      overflow: hidden;
     }
 
     .control-item {
@@ -306,6 +314,8 @@
       justify-content: space-between;
       padding: 4px 0;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      width: 200px;
+      flex-shrink: 0;
     }
 
     .control-description {

@@ -27,18 +27,18 @@ export function raycast(world, origin, direction, maxDistance = CONFIG.REACH_DIS
   // Use a local copy of origin that we can adjust
   let rayOrigin = { x: origin.x, y: origin.y, z: origin.z };
 
-  // Check if we're starting inside a solid block - if so, step out first
+  // Check if we're starting inside a solid block - if so, allow breaking it
   let startBlockId = world.getBlock(x, y, z);
   if (Block.isSolidId(startBlockId)) {
-    // We're inside a block, step out in the direction we're looking
-    // Move origin slightly forward to avoid immediate hit
-    const epsilon = 0.01;
-    rayOrigin.x = origin.x + dir.x * epsilon;
-    rayOrigin.y = origin.y + dir.y * epsilon;
-    rayOrigin.z = origin.z + dir.z * epsilon;
-    x = Math.floor(rayOrigin.x);
-    y = Math.floor(rayOrigin.y);
-    z = Math.floor(rayOrigin.z);
+    // We're inside a block, return it immediately so it can be broken
+    return {
+      hit: true,
+      blockX: x,
+      blockY: y,
+      blockZ: z,
+      face: 'top', // Default face since we're inside
+      distance: 0
+    };
   }
 
   // Step direction for each axis

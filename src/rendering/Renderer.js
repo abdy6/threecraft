@@ -4,6 +4,8 @@ import { generateChunkMesh } from '../utils/VoxelGeometry.js';
 import { generateChunkWireframe } from '../utils/WireframeGeometry.js';
 import { CONFIG } from '../config.js';
 
+// import { Sky } from 'three/examples/jsm/objects/Sky.js';
+
 // Chunk dimensions (hardcoded)
 const CHUNK_WIDTH = 16;
 const CHUNK_DEPTH = 16;
@@ -12,7 +14,20 @@ export class Renderer {
   constructor(container) {
     this.container = container;
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x87CEEB); // Sky blue
+    this.defaultBackground = new THREE.Color(0x87CEEB); // Sky blue
+    this.scene.background = this.defaultBackground;
+    
+    // Load skybox texture
+    const loader = new THREE.CubeTextureLoader();
+    loader.setPath('/threecraft/assets/skybox/milkyway/');
+    this.skyboxTexture = loader.load([
+      'px.png', // right
+      'nx.png', // left
+      'py.png', // top
+      'ny.png', // bottom
+      'pz.png', // front
+      'nz.png'  // back
+    ]);
 
     // Create renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -22,8 +37,34 @@ export class Renderer {
     container.appendChild(this.renderer.domElement);
 
     // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     this.scene.add(ambientLight);
+    this.ambientLight = ambientLight;
+
+    // const sky = new Sky();
+    // sky.scale.setScalar(450000);
+    // this.scene.add(sky);
+
+    // const skyUniforms = sky.material.uniforms;
+    // skyUniforms.turbidity.value = 10;
+    // skyUniforms.rayleigh.value = 2;
+    // skyUniforms.mieCoefficient.value = 0.005;
+    // skyUniforms.mieDirectionalG.value = 0.8;
+
+    // const sun = new THREE.Vector3();
+
+    // // elevation: 0..90, azimuth: 0..360
+    // const elevation = 45;
+    // const azimuth = 180;
+
+    // const phi = THREE.MathUtils.degToRad(90 - elevation);
+    // const theta = THREE.MathUtils.degToRad(azimuth);
+
+    // sun.setFromSphericalCoords(1, phi, theta);
+    // skyUniforms.sunPosition.value.copy(sun);
+
+    // const hemlight = new THREE.HemisphereLight(0xffffff, 0x7cbd3a, 0.8);
+    // this.scene.add(hemlight);
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(50, 100, 50);
@@ -58,6 +99,16 @@ export class Renderer {
 
     this.scene.add(directionalLight);
     this.directionalLight = directionalLight;
+
+    // Spotlight (flashlight) at player position
+    const spotLight = new THREE.SpotLight(0xffffff, 1.3, 50, Math.PI / 3.5, 0.3, 1);
+    spotLight.position.set(0, 0, 0);
+    spotLight.castShadow = CONFIG.SHADOWS_ENABLED;
+    spotLight.visible = false; // Disabled by default
+    this.scene.add(spotLight);
+    // Add target to scene so spotlight can point at it
+    this.scene.add(spotLight.target);
+    this.spotLight = spotLight;
 
     // const light = new THREE.HemisphereLight(0x87ceeb, 0x444444, 1);
     // this.scene.add(light);
@@ -197,6 +248,46 @@ export class Renderer {
     this.wireframeVisible = !this.wireframeVisible;
     for (const wireframe of this.chunkWireframes.values()) {
       wireframe.visible = this.wireframeVisible;
+    }
+  }
+
+  // Toggle lights visibility
+  toggleLights() {
+    if (this.ambientLight && this.directionalLight) {
+      // Check if lights are currently on by checking intensity
+      // Kind of a dumb system but I'll fix it later
+      const lightsCurrentlyOn = this.directionalLight.intensity > 0.5;
+      
+      if (lightsCurrentlyOn) {
+        // Turning lights off - use dim ambient light and show skybox
+        this.ambientLight.intensity = 0.075;
+        this.directionalLight.intensity = 0.075;
+        this.directionalLight.castShadow = false;
+        this.scene.background = this.skyboxTexture;
+      } else {
+        // Turning lights on - use bright ambient light and show default background
+        this.ambientLight.intensity = 0.5;
+        this.directionalLight.intensity = 1;
+        this.directionalLight.castShadow = CONFIG.SHADOWS_ENABLED;
+        this.scene.background = this.defaultBackground;
+      }
+    }
+  }
+
+  // Toggle spotlight visibility
+  toggleSpotLight() {
+    if (this.spotLight) {
+      this.spotLight.visible = !this.spotLight.visible;
+    }
+  }
+
+  // Update spotlight position and direction to follow player
+  updateSpotLight(eyePosition, forwardDirection) {
+    if (this.spotLight) {
+      // Position spotlight at player's eye position
+      this.spotLight.position.copy(eyePosition);
+      // Point spotlight in the direction player is looking
+      this.spotLight.target.position.copy(eyePosition).add(forwardDirection);
     }
   }
 

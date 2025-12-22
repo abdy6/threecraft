@@ -123,6 +123,11 @@ function animate() {
       
       renderer.updateHighlight(cachedRaycastResult);
     }
+
+    // Update spotlight position and direction to follow player
+    const eyePos = player.getEyePosition();
+    const forwardDir = player.getForwardDirection();
+    renderer.updateSpotLight(eyePos, forwardDir);
   }
 
   // Update HUD (throttled to 10 FPS)
