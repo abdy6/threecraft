@@ -14,16 +14,16 @@ export function generateChunkMesh(chunk, chunkX, chunkZ) {
   const CHUNK_HEIGHT = 128;
   const CHUNK_DEPTH = 16;
 
-  // Helper to check if a block is solid
+  // Helper to check if a block is solid (using numeric ID)
   function isSolid(x, y, z) {
-    const block = chunk.getBlock(x, y, z);
-    return block && block.solid;
+    const blockId = chunk.getBlock(x, y, z);
+    return Block.isSolidId(blockId);
   }
 
-  // Helper to get block color
+  // Helper to get block color (using numeric ID)
   function getBlockColor(x, y, z) {
-    const block = chunk.getBlock(x, y, z);
-    return block ? block.color : 0xffffff;
+    const blockId = chunk.getBlock(x, y, z);
+    return Block.getColorId(blockId);
   }
 
   // Add a face to the geometry

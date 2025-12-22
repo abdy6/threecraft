@@ -22,14 +22,16 @@ export class World {
       for (let chunkX = 0; chunkX < WIDTH; chunkX++) {
         const chunk = new Chunk(chunkX, chunkZ);
         
-        // Fill levels 0-19 with dirt blocks
+        // Fill levels 0-19 with dirt blocks (using numeric ID)
+        const dirtId = Block.getId('DIRT');
+        const grassId = Block.getId('GRASS');
         for (let z = 0; z < CHUNK_DEPTH; z++) {
           for (let x = 0; x < CHUNK_WIDTH; x++) {
             for (let y = 0; y < 20; y++) {
-              chunk.setBlock(x, y, z, new Block('DIRT'));
+              chunk.setBlockId(x, y, z, dirtId);
             }
             // Fill level 20 with grass blocks
-            chunk.setBlock(x, 20, z, new Block('GRASS'));
+            chunk.setBlockId(x, 20, z, grassId);
           }
         }
 
@@ -66,17 +68,18 @@ export class World {
     return this.chunks.get(key);
   }
 
-  // Get block at world coordinates
+  // Get block ID at world coordinates (returns numeric ID)
   getBlock(worldX, worldY, worldZ) {
     const { localX, localY, localZ, chunkX, chunkZ } = this.worldToLocal(worldX, worldY, worldZ);
     const chunk = this.getChunk(chunkX, chunkZ);
     if (!chunk) {
-      return null;
+      return Block.ID.AIR;
     }
     return chunk.getBlock(localX, localY, localZ);
   }
 
   // Set block at world coordinates
+  // Accepts numeric ID, block type string, Block instance, or null/undefined for air
   setBlock(worldX, worldY, worldZ, block) {
     const { localX, localY, localZ, chunkX, chunkZ } = this.worldToLocal(worldX, worldY, worldZ);
     const chunk = this.getChunk(chunkX, chunkZ);
@@ -92,8 +95,8 @@ export class World {
 
   // Check if a block position is solid (for collision)
   isSolid(worldX, worldY, worldZ) {
-    const block = this.getBlock(worldX, worldY, worldZ);
-    return block && block.solid;
+    const blockId = this.getBlock(worldX, worldY, worldZ);
+    return Block.isSolidId(blockId);
   }
 
   // Get all chunks that need mesh updates

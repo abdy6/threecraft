@@ -4,6 +4,7 @@ import { Controls } from './player/Controls.js';
 import { Renderer } from './rendering/Renderer.js';
 import { raycast } from './utils/Raycast.js';
 import { CONFIG } from './config.js';
+import Stats from 'stats.js';
 
 // Initialize game
 const container = document.getElementById('canvas-container');
@@ -15,6 +16,14 @@ const controls = new Controls(player, renderer, world);
 // Initialize world rendering
 renderer.initializeWorld(world);
 renderer.camera = player.getCamera();
+
+// Initialize stats.js for FPS monitoring
+const stats = new Stats();
+stats.showPanel(2); // 0: fps, 1: ms, 2: mb
+stats.dom.style.position = 'absolute';
+stats.dom.style.top = '0px';
+stats.dom.style.left = '0px';
+document.body.appendChild(stats.dom);
 
 // Game loop
 let lastTime = performance.now();
@@ -34,8 +43,19 @@ const hud = document.getElementById('hud');
 // HUD visibility state
 let hudVisible = true;
 
+// HUD update throttling (10 FPS = every 100ms)
+let hudLastUpdate = 0;
+const HUD_UPDATE_INTERVAL = 100; // milliseconds
+
 // Changelog content (loaded once at startup)
 let changelogText = '';
+
+// Raycast caching
+let cachedRaycastResult = null;
+let lastPlayerPosition = null;
+let lastCameraRotation = null;
+const RAYCAST_POSITION_THRESHOLD = 0.01; // Only update if player moved more than this
+const RAYCAST_ROTATION_THRESHOLD = 0.001; // Only update if camera rotated more than this
 
 // Handle tab visibility changes
 document.addEventListener('visibilitychange', () => {
@@ -49,6 +69,8 @@ document.addEventListener('visibilitychange', () => {
 });
 
 function animate() {
+  stats.begin();
+  
   const currentTime = performance.now();
   let deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
   
@@ -81,17 +103,43 @@ function animate() {
     if (shouldShowHighlight) {
       const eyePos = player.getEyePosition();
       const direction = player.getForwardDirection();
-      const raycastResult = raycast(world, eyePos, direction);
-      renderer.updateHighlight(raycastResult);
+      const camera = player.getCamera();
+      
+      // Check if we need to update raycast (player moved or camera rotated)
+      const playerMoved = !lastPlayerPosition || 
+        eyePos.distanceTo(lastPlayerPosition) > RAYCAST_POSITION_THRESHOLD;
+      const cameraRotated = !lastCameraRotation ||
+        Math.abs(camera.rotation.y - lastCameraRotation.y) > RAYCAST_ROTATION_THRESHOLD ||
+        Math.abs(camera.rotation.x - lastCameraRotation.x) > RAYCAST_ROTATION_THRESHOLD;
+      
+      if (playerMoved || cameraRotated || !cachedRaycastResult) {
+        cachedRaycastResult = raycast(world, eyePos, direction);
+        lastPlayerPosition = eyePos.clone();
+        lastCameraRotation = {
+          y: camera.rotation.y,
+          x: camera.rotation.x
+        };
+      }
+      
+      renderer.updateHighlight(cachedRaycastResult);
     }
   }
 
-  // Update HUD
-  updateHUD();
+  // Update HUD (throttled to 10 FPS)
+  const now = performance.now();
+  if (now - hudLastUpdate >= HUD_UPDATE_INTERVAL) {
+    updateHUD();
+    hudLastUpdate = now;
+  }
+
+  // Update chunk meshes incrementally (max 1 chunk per frame)
+  renderer.updateChunkMeshes();
 
   // Always render (even when tab is hidden, to prevent issues)
   renderer.render(player.getCamera());
 
+  stats.end();
+  
   requestAnimationFrame(animate);
 }
 
@@ -117,9 +165,15 @@ function updateHUD() {
   hudSelectedBlock.textContent = `Block: ${controls.getSelectedBlockType()}`;
 }
 
-// Handle window resize
+// Debounce window resize handler
+let resizeTimeout = null;
 window.addEventListener('resize', () => {
-  renderer.onWindowResize(player.getCamera());
+  if (resizeTimeout) {
+    clearTimeout(resizeTimeout);
+  }
+  resizeTimeout = setTimeout(() => {
+    renderer.onWindowResize(player.getCamera());
+  }, 100); // Debounce to 100ms
 });
 
 // Setup pause menu button handlers
@@ -158,30 +212,46 @@ function formatKeyCode(keyCode) {
   return keyCode;
 }
 
+// Cache controls list DOM elements
+let controlsListItems = null;
+
 // Function to show controls screen
 function showControlsScreen() {
   if (pauseMenuScreen) pauseMenuScreen.style.display = 'none';
   if (controlsScreen) controlsScreen.style.display = 'flex';
   
-  // Populate controls list
+  // Populate controls list (only if not already cached)
   if (controlsList) {
-    controlsList.innerHTML = '';
-    for (const [key, keyCode] of Object.entries(CONFIG.KEYBINDS)) {
-      const description = CONFIG.KEYBIND_DESCRIPTIONS[key] || key;
-      const controlItem = document.createElement('div');
-      controlItem.className = 'control-item';
-      
-      const descSpan = document.createElement('span');
-      descSpan.className = 'control-description';
-      descSpan.textContent = description;
-      
-      const keySpan = document.createElement('span');
-      keySpan.className = 'control-key';
-      keySpan.textContent = formatKeyCode(keyCode);
-      
-      controlItem.appendChild(descSpan);
-      controlItem.appendChild(keySpan);
-      controlsList.appendChild(controlItem);
+    if (!controlsListItems) {
+      controlsListItems = [];
+      controlsList.innerHTML = ''; // Clear only once
+      for (const [key, keyCode] of Object.entries(CONFIG.KEYBINDS)) {
+        const description = CONFIG.KEYBIND_DESCRIPTIONS[key] || key;
+        const controlItem = document.createElement('div');
+        controlItem.className = 'control-item';
+        
+        const descSpan = document.createElement('span');
+        descSpan.className = 'control-description';
+        descSpan.textContent = description;
+        
+        const keySpan = document.createElement('span');
+        keySpan.className = 'control-key';
+        keySpan.textContent = formatKeyCode(keyCode);
+        
+        controlItem.appendChild(descSpan);
+        controlItem.appendChild(keySpan);
+        controlsList.appendChild(controlItem);
+        controlsListItems.push({ item: controlItem, keySpan });
+      }
+    } else {
+      // Update existing elements if keybinds changed
+      let index = 0;
+      for (const [key, keyCode] of Object.entries(CONFIG.KEYBINDS)) {
+        if (controlsListItems[index]) {
+          controlsListItems[index].keySpan.textContent = formatKeyCode(keyCode);
+        }
+        index++;
+      }
     }
   }
 }

@@ -180,8 +180,7 @@ export class Controls {
         if (event.button === 0) {
           // Left click - break block
           if (result.hit) {
-            this.world.setBlock(result.blockX, result.blockY, result.blockZ, null);
-            this.renderer.updateChunkMeshes();
+            this.world.setBlock(result.blockX, result.blockY, result.blockZ, Block.ID.AIR);
             // Update highlight immediately after breaking
             const newRaycast = raycast(this.world, eyePos, direction);
             this.renderer.updateHighlight(newRaycast);
@@ -203,9 +202,9 @@ export class Controls {
                 placePos.z >= playerPos.z - halfWidth && placePos.z <= playerPos.z + halfWidth;
 
               if (!inPlayerBounds && !this.world.isSolid(placePos.x, placePos.y, placePos.z)) {
-                // Use the selected block type instead of hardcoded 'GRASS'
-                this.world.setBlock(placePos.x, placePos.y, placePos.z, new Block(this.selectedBlockType));
-                this.renderer.updateChunkMeshes();
+                // Use the selected block type (convert to ID)
+                const blockId = Block.getId(this.selectedBlockType);
+                this.world.setBlock(placePos.x, placePos.y, placePos.z, blockId);
                 // Update highlight immediately after placing
                 const newRaycast = raycast(this.world, eyePos, direction);
                 this.renderer.updateHighlight(newRaycast);
@@ -394,8 +393,9 @@ export class Controls {
               placePos.z >= playerPos.z - halfWidth && placePos.z <= playerPos.z + halfWidth;
 
             if (!inPlayerBounds && !this.world.isSolid(placePos.x, placePos.y, placePos.z)) {
-              this.world.setBlock(placePos.x, placePos.y, placePos.z, new Block(this.selectedBlockType));
-              this.renderer.updateChunkMeshes();
+              // Use the selected block type (convert to ID)
+              const blockId = Block.getId(this.selectedBlockType);
+              this.world.setBlock(placePos.x, placePos.y, placePos.z, blockId);
               // Update highlight immediately after placing
               const newRaycast = raycast(this.world, eyePos, direction);
               this.renderer.updateHighlight(newRaycast);
@@ -414,22 +414,23 @@ export class Controls {
   handleBreakBlock() {
     // Import raycast here to avoid circular dependencies
     import('../utils/Raycast.js').then(({ raycast }) => {
-      const eyePos = this.player.getEyePosition();
-      const direction = this.player.getForwardDirection();
+      import('../world/Block.js').then(({ Block }) => {
+        const eyePos = this.player.getEyePosition();
+        const direction = this.player.getForwardDirection();
 
-      const result = raycast(this.world, eyePos, direction);
+        const result = raycast(this.world, eyePos, direction);
 
-      if (result.hit) {
-        this.world.setBlock(result.blockX, result.blockY, result.blockZ, null);
-        this.renderer.updateChunkMeshes();
-        // Update highlight immediately after breaking
-        const newRaycast = raycast(this.world, eyePos, direction);
-        this.renderer.updateHighlight(newRaycast);
-      } else {
-        // Even if we didn't break, update highlight to reflect current state
-        const newRaycast = raycast(this.world, eyePos, direction);
-        this.renderer.updateHighlight(newRaycast);
-      }
+        if (result.hit) {
+          this.world.setBlock(result.blockX, result.blockY, result.blockZ, Block.ID.AIR);
+          // Update highlight immediately after breaking
+          const newRaycast = raycast(this.world, eyePos, direction);
+          this.renderer.updateHighlight(newRaycast);
+        } else {
+          // Even if we didn't break, update highlight to reflect current state
+          const newRaycast = raycast(this.world, eyePos, direction);
+          this.renderer.updateHighlight(newRaycast);
+        }
+      });
     });
   }
   

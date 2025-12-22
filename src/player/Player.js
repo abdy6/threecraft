@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
+import { Block } from '../world/Block.js';
 
 export class Player {
   constructor(world) {
@@ -28,7 +29,7 @@ export class Player {
     this.camera.position.y += this.eyeHeight;
   }
 
-  // AABB collision detection
+  // AABB collision detection (using direct ID lookups)
   checkCollision(newPos) {
     const halfWidth = this.width / 2;
     const minX = Math.floor(newPos.x - halfWidth);
@@ -38,11 +39,12 @@ export class Player {
     const minZ = Math.floor(newPos.z - halfWidth);
     const maxZ = Math.floor(newPos.z + halfWidth);
 
-    // Check all blocks in player's bounding box
+    // Check all blocks in player's bounding box (using direct ID lookups)
     for (let x = minX; x <= maxX; x++) {
       for (let y = minY; y <= maxY; y++) {
         for (let z = minZ; z <= maxZ; z++) {
-          if (this.world.isSolid(x, y, z)) {
+          const blockId = this.world.getBlock(x, y, z);
+          if (Block.isSolidId(blockId)) {
             return true; // Collision detected
           }
         }

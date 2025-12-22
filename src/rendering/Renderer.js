@@ -67,6 +67,9 @@ export class Renderer {
     this.chunkWireframes = new Map();
     this.wireframeVisible = false;
     this.highlightBox = null;
+    // Cache materials for reuse
+    this.chunkMaterial = null;
+    this.wireframeMaterial = null;
     this.setupHighlightBox();
 
     // Store camera reference for resize
@@ -97,13 +100,16 @@ export class Renderer {
     this.updateChunkMeshes();
   }
 
-  // Update chunk meshes
+  // Update chunk meshes (incremental - processes max 1 chunk per call)
   updateChunkMeshes() {
     if (!this.world) return;
 
     const chunksToUpdate = this.world.getChunksNeedingUpdate();
-
-    for (const chunk of chunksToUpdate) {
+    
+    // Process only the first chunk to avoid blocking the frame
+    if (chunksToUpdate.length > 0) {
+      const chunk = chunksToUpdate[0];
+      
       // Remove old mesh if it exists
       const key = `${chunk.chunkX},${chunk.chunkZ}`;
       const oldMesh = this.chunkMeshes.get(key);
@@ -125,10 +131,15 @@ export class Renderer {
       const geometry = generateChunkMesh(chunk, chunk.chunkX, chunk.chunkZ);
       
       if (geometry) {
-        const material = new THREE.MeshLambertMaterial({
-          vertexColors: true,
-          side: THREE.FrontSide
-        });
+        // Reuse material instance if available, otherwise create new one
+        let material = this.chunkMaterial;
+        if (!material) {
+          material = new THREE.MeshLambertMaterial({
+            vertexColors: true,
+            side: THREE.FrontSide
+          });
+          this.chunkMaterial = material; // Cache for reuse
+        }
 
         const mesh = new THREE.Mesh(geometry, material);
 
@@ -152,12 +163,17 @@ export class Renderer {
       // Generate wireframe
       const wireframeGeometry = generateChunkWireframe(chunk, chunk.chunkX, chunk.chunkZ);
       if (wireframeGeometry) {
-        const wireframeMaterial = new THREE.LineBasicMaterial({
-          color: 0x000000,
-          linewidth: 1,
-          transparent: true,
-          opacity: 0.3
-        });
+        // Reuse wireframe material if available
+        let wireframeMaterial = this.wireframeMaterial;
+        if (!wireframeMaterial) {
+          wireframeMaterial = new THREE.LineBasicMaterial({
+            color: 0x000000,
+            linewidth: 1,
+            transparent: true,
+            opacity: 0.3
+          });
+          this.wireframeMaterial = wireframeMaterial; // Cache for reuse
+        }
 
         const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
         

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Block } from '../world/Block.js';
 
 // Generate wireframe edges for visible block faces
 export function generateChunkWireframe(chunk, chunkX, chunkZ) {
@@ -11,10 +12,10 @@ export function generateChunkWireframe(chunk, chunkX, chunkZ) {
   const CHUNK_HEIGHT = 128;
   const CHUNK_DEPTH = 16;
 
-  // Helper to check if a block is solid
+  // Helper to check if a block is solid (using numeric ID)
   function isSolid(x, y, z) {
-    const block = chunk.getBlock(x, y, z);
-    return block && block.solid;
+    const blockId = chunk.getBlock(x, y, z);
+    return Block.isSolidId(blockId);
   }
 
   // Add an edge (line segment) between two points

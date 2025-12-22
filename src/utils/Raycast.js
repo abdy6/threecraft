@@ -1,4 +1,5 @@
 import { CONFIG } from '../config.js';
+import { Block } from '../world/Block.js';
 
 // DDA (Digital Differential Analyzer) algorithm for voxel raycasting
 export function raycast(world, origin, direction, maxDistance = CONFIG.REACH_DISTANCE) {
@@ -27,8 +28,8 @@ export function raycast(world, origin, direction, maxDistance = CONFIG.REACH_DIS
   let rayOrigin = { x: origin.x, y: origin.y, z: origin.z };
 
   // Check if we're starting inside a solid block - if so, step out first
-  let startBlock = world.getBlock(x, y, z);
-  if (startBlock && startBlock.solid) {
+  let startBlockId = world.getBlock(x, y, z);
+  if (Block.isSolidId(startBlockId)) {
     // We're inside a block, step out in the direction we're looking
     // Move origin slightly forward to avoid immediate hit
     const epsilon = 0.01;
@@ -103,8 +104,8 @@ export function raycast(world, origin, direction, maxDistance = CONFIG.REACH_DIS
     }
 
     // Check the block we just stepped into
-    const block = world.getBlock(x, y, z);
-    if (block && block.solid) {
+    const blockId = world.getBlock(x, y, z);
+    if (Block.isSolidId(blockId)) {
       // Hit a solid block
       return {
         hit: true,
